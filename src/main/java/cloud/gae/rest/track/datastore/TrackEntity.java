@@ -8,17 +8,19 @@ import com.googlecode.objectify.annotation.Id;
 @Entity
 public class TrackEntity {
     @Id
-    public String trackId;
+    public String id;
     public String title;
     public String artist;
+    public String isrc;
 
 
     @Override
     public String toString() {
         return "TrackEntity{" +
-               "trackId='" + trackId + '\'' +
+               "id='" + id + '\'' +
                ", title='" + title + '\'' +
                ", artist='" + artist + '\'' +
+               ", isrc='" + isrc + '\'' +
                '}';
     }
 }

@@ -31,16 +31,19 @@ public class TrackConverter {
 
     public TrackEntity convert(Track track) {
         TrackEntity trackEntity = new TrackEntity();
+        trackEntity.id = track.isrc + "_" + track.trackId;
         trackEntity.artist = track.artist;
         trackEntity.title = track.title;
-        trackEntity.trackId = track.isrc + "_" + track.trackId;
+        trackEntity.isrc = track.isrc;
         return trackEntity;
     }
 
     public Track convert(TrackEntity trackEntity) {
         Track track = new Track();
+        track.id = trackEntity.id;
         track.artist = trackEntity.artist;
         track.title = trackEntity.title;
+        track.isrc = trackEntity.isrc;
         return track;
     }
 

@@ -27,16 +27,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class TrackSearchService {
 
+    private static final String INDEX_NAME = "Track";
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     public void add(Track track, String trackKey) {
-        Document document = document(text("title", track.title),
+        Document document = document(text("key", trackKey),
                                      index("title", track.title),
-                                     text("isrc", track.isrc),
-                                     text("artist", track.artist),
-                                     index("artist", track.artist),
-                                     text("trackId", track.trackId),
-                                     text("key", trackKey));
+                                     index("artist", track.artist));
         try {
             PutResponse putResponse = index().put(document);
             logger.info("Put response: " + putResponse);
@@ -49,8 +46,10 @@ public class TrackSearchService {
         String queryString = createQuery(artist, title);
         Query query = Query.newBuilder().build(queryString);
         logger.info("queryString [" + queryString + "]");
+
         Results<ScoredDocument> result = index().search(query);
         logger.info("Result: " + result.getOperationResult());
+
         List<String> keys = new ArrayList<>();
         for (ScoredDocument scoredDocument : result) {
             keys.add(scoredDocument.getOnlyField("key").getText());
@@ -61,13 +60,13 @@ public class TrackSearchService {
     private String createQuery(String artist, String title) {
         StringBuilder queryString = new StringBuilder();
         if (artist != null && !artist.isEmpty()) {
-            queryString.append("artistInd=").append(artist);
+            queryString.append("artist=\"").append(artist).append("\"");
         }
         if (title != null && !title.isEmpty()) {
             if (queryString.length() != 0) {
                 queryString.append(" OR ");
             }
-            queryString.append("titleInd=").append(title);
+            queryString.append("title=\"").append(title).append("\"");
         }
         return queryString.toString();
     }
@@ -81,7 +80,7 @@ public class TrackSearchService {
     }
 
     private Index index() {
-        IndexSpec indexSpec = IndexSpec.newBuilder().setName("Track").build();
+        IndexSpec indexSpec = IndexSpec.newBuilder().setName(INDEX_NAME).build();
         return SearchServiceFactory.getSearchService().getIndex(indexSpec);
     }
 
@@ -90,10 +89,11 @@ public class TrackSearchService {
     }
 
     private Field index(String name, String value) {
-        return Field.newBuilder().setName(name + "Ind").setText(tokenize(value)).build();
+        return Field.newBuilder().setName(name).setText(tokenize(value)).build();
     }
 
-    private static String tokenize(String value) {
+    private String tokenize(String value) {
+        logger.info("tokenize " + value);
         StringBuilder result = new StringBuilder();
         Set<String> strings = new HashSet<>();
 
@@ -112,6 +112,7 @@ public class TrackSearchService {
             }
         }
 
+        logger.info("result: " + result);
         return result.toString();
     }
 
