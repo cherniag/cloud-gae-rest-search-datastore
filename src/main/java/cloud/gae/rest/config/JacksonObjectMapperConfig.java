@@ -1,4 +1,4 @@
-package cloud.gae.rest;
+package cloud.gae.rest.config;
 
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;

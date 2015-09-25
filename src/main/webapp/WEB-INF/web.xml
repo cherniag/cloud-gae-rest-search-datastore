@@ -6,7 +6,7 @@
         </listener-class>
     </listener>
     <listener>
-        <listener-class>cloud.gae.rest.StartupListener</listener-class>
+        <listener-class>cloud.gae.rest.config.StartupListener</listener-class>
     </listener>
 
     <context-param>
@@ -21,7 +21,7 @@
         </servlet-class>
         <init-param>
             <param-name>javax.ws.rs.Application</param-name>
-            <param-value>cloud.gae.rest.JerseyConfig</param-value>
+            <param-value>cloud.gae.rest.config.JerseyConfig</param-value>
         </init-param>
         <init-param>
             <param-name>jersey.config.server.response.setStatusOverSendError</param-name>

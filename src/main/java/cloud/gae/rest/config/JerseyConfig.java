@@ -1,5 +1,6 @@
-package cloud.gae.rest;
+package cloud.gae.rest.config;
 
+import cloud.gae.rest.track.web.TrackController;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.spring.scope.RequestContextFilter;
@@ -11,9 +12,10 @@ public class JerseyConfig extends ResourceConfig {
     public JerseyConfig() {
         // Enable Spring DI
         register(RequestContextFilter.class);
-        //register(JacksonObjectMapperConfig.class);
+        // JSON converter
         register(JacksonFeature.class);
 
+        // Application endpoints
         register(TrackController.class);
     }
 }

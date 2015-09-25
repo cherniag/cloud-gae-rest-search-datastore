@@ -1,10 +1,11 @@
-package cloud.gae.rest;
+package cloud.gae.rest.config;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 import java.util.logging.Logger;
 
+import cloud.gae.rest.track.datastore.TrackEntity;
 import com.googlecode.objectify.ObjectifyService;
 
 /**
