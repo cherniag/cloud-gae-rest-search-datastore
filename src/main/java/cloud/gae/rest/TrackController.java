@@ -1,6 +1,5 @@
 package cloud.gae.rest;
 
-import javax.annotation.Resource;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -9,13 +8,15 @@ import javax.ws.rs.Produces;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 /**
  * Author: Gennadii Cherniaiev Date: 9/25/2015
  */
 @Path("/api")
 public class TrackController {
 
-    @Resource
+    @Autowired
     private TrackService trackService;
 
 
@@ -23,13 +24,13 @@ public class TrackController {
     @Path("/tracks")
     @Produces("application/json")
     public List<Track> getAll() {
-         return null;
+         return trackService.getAll();
     }
 
     @POST
     @Path("/tracks")
     @Consumes("application/json")
     public void create(Track track) {
-
+        trackService.save(track);
     }
 }
