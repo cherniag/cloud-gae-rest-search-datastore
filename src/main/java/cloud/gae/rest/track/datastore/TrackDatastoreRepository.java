@@ -29,7 +29,7 @@ public class TrackDatastoreRepository {
         List<Key<TrackEntity>> k = toKeys(keys);
 
         Collection<TrackEntity> values = ofy().load().keys(k).values();
-        logger.info("Found TrackEntity: " + values);
+        logger.info("Found TrackEntities: " + values);
 
         return new ArrayList<>(values);
     }

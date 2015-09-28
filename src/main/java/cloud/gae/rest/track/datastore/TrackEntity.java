@@ -2,6 +2,7 @@ package cloud.gae.rest.track.datastore;
 
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Unindex;
 /**
  * Author: Gennadii Cherniaiev Date: 9/25/2015
  */
@@ -9,8 +10,11 @@ import com.googlecode.objectify.annotation.Id;
 public class TrackEntity {
     @Id
     public String id;
+    @Unindex
     public String title;
+    @Unindex
     public String artist;
+    @Unindex
     public String isrc;
 
 

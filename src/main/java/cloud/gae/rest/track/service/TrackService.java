@@ -6,6 +6,9 @@ import java.util.logging.Logger;
 import cloud.gae.rest.track.datastore.TrackDatastoreRepository;
 import cloud.gae.rest.track.datastore.TrackEntity;
 import cloud.gae.rest.track.search.TrackSearchService;
+import com.googlecode.objectify.VoidWork;
+
+import static com.googlecode.objectify.ObjectifyService.ofy;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,12 +32,17 @@ public class TrackService {
         return trackConverter.convertToTracks(list);
     }
 
-    public void save(Track track) {
-        TrackEntity trackEntity = trackConverter.convert(track);
+    public void save(final Track track) {
+        final TrackEntity trackEntity = trackConverter.convert(track);
 
-        String key = repository.save(trackEntity);
-
-        trackSearchService.add(track, key);
+        // work must be idempotent
+        ofy().transactNew(1, new VoidWork() {
+            public void vrun() {
+                String key = repository.save(trackEntity);
+                logger.info("Track entity is saved, key: " + key);
+                trackSearchService.add(track, key);
+            }
+        });
     }
 
     public List<Track> search(String artist, String title) {
@@ -42,8 +50,6 @@ public class TrackService {
         logger.info("Found keys: " + keys);
 
         List<TrackEntity> entities = repository.search(keys);
-
-        logger.info("Found TrackEntities: " + entities);
 
         return trackConverter.convertToTracks(entities);
     }

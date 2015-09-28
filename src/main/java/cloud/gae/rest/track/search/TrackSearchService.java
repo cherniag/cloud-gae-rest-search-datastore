@@ -16,6 +16,7 @@ import com.google.appengine.api.search.IndexSpec;
 import com.google.appengine.api.search.PutException;
 import com.google.appengine.api.search.PutResponse;
 import com.google.appengine.api.search.Query;
+import com.google.appengine.api.search.QueryOptions;
 import com.google.appengine.api.search.Results;
 import com.google.appengine.api.search.ScoredDocument;
 import com.google.appengine.api.search.SearchServiceFactory;
@@ -31,28 +32,31 @@ public class TrackSearchService {
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     public void add(Track track, String trackKey) {
-        Document document = document(text("key", trackKey),
-                                     index("title", track.title),
-                                     index("artist", track.artist));
+        Document document = document(trackKey,
+                                     text("title", track.title),
+                                     text("artist", track.artist));
         try {
             PutResponse putResponse = index().put(document);
             logger.info("Put response: " + putResponse);
         } catch (PutException e) {
             logger.log(Level.SEVERE, e.getMessage());
+            throw e;
         }
     }
 
     public List<String> search(String artist, String title) {
         String queryString = createQuery(artist, title);
-        Query query = Query.newBuilder().build(queryString);
-        logger.info("queryString [" + queryString + "]");
 
-        Results<ScoredDocument> result = index().search(query);
-        logger.info("Result: " + result.getOperationResult());
+        QueryOptions queryOptions = QueryOptions.newBuilder().setReturningIdsOnly(true).build();
+        Query query = Query.newBuilder().setOptions(queryOptions).build(queryString);
+        logger.info("QueryString [" + queryString + "], query: " + query);
+
+        Results<ScoredDocument> documents = index().search(query);
+        logger.info("Search operational result: " + documents.getOperationResult());
 
         List<String> keys = new ArrayList<>();
-        for (ScoredDocument scoredDocument : result) {
-            keys.add(scoredDocument.getOnlyField("key").getText());
+        for (ScoredDocument scoredDocument : documents) {
+            keys.add(scoredDocument.getId());
         }
         return keys;
     }
@@ -71,8 +75,9 @@ public class TrackSearchService {
         return queryString.toString();
     }
 
-    private Document document(Field... fields) {
+    private Document document(String trackKey, Field... fields) {
         Document.Builder builder = Document.newBuilder();
+        builder.setId(trackKey);
         for (Field field : fields) {
             builder.addField(field);
         }
@@ -85,15 +90,11 @@ public class TrackSearchService {
     }
 
     private Field text(String name, String value) {
-        return Field.newBuilder().setName(name).setText(value).build();
-    }
-
-    private Field index(String name, String value) {
         return Field.newBuilder().setName(name).setText(tokenize(value)).build();
     }
 
     private String tokenize(String value) {
-        logger.info("tokenize " + value);
+        logger.log(Level.FINE, "tokenize " + value);
         StringBuilder result = new StringBuilder();
         Set<String> strings = new HashSet<>();
 
@@ -112,7 +113,7 @@ public class TrackSearchService {
             }
         }
 
-        logger.info("result: " + result);
+        logger.log(Level.FINE, "result: " + result);
         return result.toString();
     }
 
