@@ -9,8 +9,6 @@ public class Track implements Serializable {
     public String title;
     public String artist;
     public String isrc;
-    public String trackId;
-
 
     @Override
     public String toString() {
@@ -18,7 +16,6 @@ public class Track implements Serializable {
                "title='" + title + '\'' +
                ", artist='" + artist + '\'' +
                ", isrc='" + isrc + '\'' +
-               ", trackId='" + trackId + '\'' +
                '}';
     }
 }

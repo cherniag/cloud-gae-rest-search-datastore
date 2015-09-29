@@ -13,11 +13,15 @@ import org.springframework.stereotype.Service;
  * Author: Gennadii Cherniaiev Date: 9/25/2015
  */
 @Service
-public class TrackDatastoreRepository {
+public class TrackDataStoreRepository {
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     public String save(TrackEntity trackEntity) {
         return ofy().save().entity(trackEntity).now().getName();
+    }
+
+    public TrackEntity findOne(String id) {
+        return ofy().load().key(Key.create(TrackEntity.class, id)).now();
     }
 
     public List<TrackEntity> search(List<String> keys) {
@@ -30,14 +34,6 @@ public class TrackDatastoreRepository {
         return new ArrayList<>(values);
     }
 
-    private List<Key<TrackEntity>> toKeys(List<String> keys) {
-        List<Key<TrackEntity>> k = new ArrayList<>();
-        for (String key : keys) {
-            k.add(Key.create(TrackEntity.class, key));
-        }
-        return k;
-    }
-
     public void deleteAll() {
         while(true) {
             List<Key<TrackEntity>> list = ofy().load().type(TrackEntity.class).limit(10000).keys().list();
@@ -47,5 +43,13 @@ public class TrackDatastoreRepository {
             }
             ofy().delete().keys(list);
         }
+    }
+
+    private List<Key<TrackEntity>> toKeys(List<String> keys) {
+        List<Key<TrackEntity>> k = new ArrayList<>();
+        for (String key : keys) {
+            k.add(Key.create(TrackEntity.class, key));
+        }
+        return k;
     }
 }

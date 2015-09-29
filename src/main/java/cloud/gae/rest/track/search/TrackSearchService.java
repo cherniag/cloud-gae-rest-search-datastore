@@ -4,11 +4,12 @@ package cloud.gae.rest.track.search;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import cloud.gae.rest.track.service.Track;
+import cloud.gae.rest.track.datastore.TrackEntity;
 import com.google.appengine.api.search.Document;
 import com.google.appengine.api.search.Field;
 import com.google.appengine.api.search.GetRequest;
@@ -33,10 +34,11 @@ public class TrackSearchService {
     private static final String INDEX_NAME = "Track";
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    public void add(Track track, String trackKey) {
-        Document document = document(trackKey,
-                                     text("title", track.title),
-                                     text("artist", track.artist));
+    public void add(String entityId, TrackEntity trackEntity) {
+        Document document = document(entityId,
+                                     text("title", trackEntity.title),
+                                     text("artist", trackEntity.artist),
+                                     atom("isrc", trackEntity.isrc));
         try {
             PutResponse putResponse = index().put(document);
             logger.info("Put response: " + putResponse);
@@ -46,12 +48,12 @@ public class TrackSearchService {
         }
     }
 
-    public List<String> search(String artist, String title, Integer page, Integer size) {
+    public List<String> search(TrackSearchDto dto) {
         long now = System.currentTimeMillis();
-        String queryString = createQuery(artist, title);
-        QueryOptions queryOptions = QueryOptions.newBuilder().setReturningIdsOnly(true).setOffset(page * size).setLimit(size).build();
+        String queryString = createQuery(dto);
+        QueryOptions queryOptions = QueryOptions.newBuilder().setReturningIdsOnly(true).setOffset(dto.getOffset()).setLimit(dto.getLimit()).build();
         Query query = Query.newBuilder().setOptions(queryOptions).build(queryString);
-        logger.info("QueryString [" + queryString);
+        logger.info("QueryString [" + queryString + "]");
 
         Results<ScoredDocument> documents = index().search(query);
         logger.info("Search operational result, elapsed " + (System.currentTimeMillis() - now) + " ms");
@@ -63,16 +65,15 @@ public class TrackSearchService {
         return keys;
     }
 
-    private String createQuery(String artist, String title) {
+    private String createQuery(TrackSearchDto dto) {
         StringBuilder queryString = new StringBuilder();
-        if (artist != null && !artist.isEmpty()) {
-            queryString.append("artist=\"").append(artist).append("\"");
-        }
-        if (title != null && !title.isEmpty()) {
-            if (queryString.length() != 0) {
-                queryString.append(" AND ");
-            }
-            queryString.append("title=\"").append(title).append("\"");
+        for (Map.Entry<String, String> param : dto.getParams().entrySet()) {
+             if(param.getValue()!= null && !param.getValue().isEmpty()) {
+                 if (queryString.length() != 0) {
+                     queryString.append(" AND ");
+                 }
+                 queryString.append(param.getKey()).append("=\"").append(param.getValue()).append("\"");
+             }
         }
         return queryString.toString();
     }
@@ -94,6 +95,11 @@ public class TrackSearchService {
     private Field text(String name, String value) {
         return Field.newBuilder().setName(name).setText(tokenize(value)).build();
     }
+
+    private Field atom(String name, String value) {
+        return Field.newBuilder().setName(name).setAtom(value).build();
+    }
+
 
     private String tokenize(String value) {
         String normalized = value.toLowerCase();

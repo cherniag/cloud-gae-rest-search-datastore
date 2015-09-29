@@ -1,17 +1,20 @@
 package cloud.gae.rest.track.web;
 
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Response;
 
 import java.util.List;
 import java.util.logging.Logger;
 
+import cloud.gae.rest.track.search.TrackSearchDto;
 import cloud.gae.rest.track.service.Track;
 import cloud.gae.rest.track.service.TrackService;
 
@@ -33,21 +36,29 @@ public class TrackController {
     @GET
     @Path("/tracks")
     @Produces("application/json")
-    public List<Track> search(@QueryParam("artist") String artist,
-                              @QueryParam("title") String title,
-                              @QueryParam("page") @DefaultValue("0") Integer page,
-                              @QueryParam("size") @DefaultValue("1000") Integer size) {
-        logger.info("Search artist[" + artist + "], tittle [" + title + "], page " + page + ", size " + size);
-        return trackService.search(artist, title, page, size);
+    public List<Track> search(@BeanParam TrackSearchDto dto) {
+        logger.info("Search tracks: " + dto);
+        return trackService.search(dto);
     }
 
     @POST
     @Path("/tracks")
     @Consumes("application/json")
-    public void create(Track track) {
+    public Response create(Track track) {
         logger.info("Create " + track);
         trackService.save(track);
         logger.info("Saved");
+        return Response.status(Response.Status.CREATED).build();
+    }
+
+    @PUT
+    @Path("/tracks/{id}")
+    @Consumes("application/json")
+    public void update(@PathParam("id") String trackId,
+                       Track track) {
+        logger.info("Update " + track);
+        trackService.update(trackId, track);
+        logger.info("Updated");
     }
 
     @DELETE

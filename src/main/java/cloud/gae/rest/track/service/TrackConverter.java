@@ -31,7 +31,7 @@ public class TrackConverter {
 
     public TrackEntity convert(Track track) {
         TrackEntity trackEntity = new TrackEntity();
-        trackEntity.id = track.isrc + "_" + track.trackId;
+        trackEntity.id = track.id;
         trackEntity.artist = track.artist;
         trackEntity.title = track.title;
         trackEntity.isrc = track.isrc;
