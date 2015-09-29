@@ -16,10 +16,6 @@ import org.springframework.stereotype.Service;
 public class TrackDatastoreRepository {
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    public List<TrackEntity> getAll() {
-        return ofy().load().type(TrackEntity.class).list();
-    }
-
     public String save(TrackEntity trackEntity) {
         return ofy().save().entity(trackEntity).now().getName();
     }
@@ -40,5 +36,16 @@ public class TrackDatastoreRepository {
             k.add(Key.create(TrackEntity.class, key));
         }
         return k;
+    }
+
+    public void deleteAll() {
+        while(true) {
+            List<Key<TrackEntity>> list = ofy().load().type(TrackEntity.class).limit(10000).keys().list();
+            logger.info("fetched " + list.size() + " keys to delete");
+            if(list.isEmpty()){
+                return;
+            }
+            ofy().delete().keys(list);
+        }
     }
 }

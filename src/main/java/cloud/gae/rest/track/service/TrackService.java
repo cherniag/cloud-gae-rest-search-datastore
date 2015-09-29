@@ -27,33 +27,37 @@ public class TrackService {
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    public List<Track> getAll() {
-        List<TrackEntity> list = repository.getAll();
-        return trackConverter.convertToTracks(list);
-    }
-
     public void save(final Track track) {
         final TrackEntity trackEntity = trackConverter.convert(track);
 
         // work must be idempotent
         ofy().transactNew(1, new VoidWork() {
             public void vrun() {
+                long now = System.currentTimeMillis();
                 String key = repository.save(trackEntity);
                 logger.info("Track entity is saved, key: " + key);
                 trackSearchService.add(track, key);
+                logger.info("Create record took " + (System.currentTimeMillis() - now) + " ms");
             }
         });
     }
 
-    public List<Track> search(String artist, String title) {
-        List<String> keys = trackSearchService.search(artist, title);
-        logger.info("Found keys: " + keys);
+    public List<Track> search(String artist, String title, Integer page, Integer size) {
+        long now = System.currentTimeMillis();
+
+        List<String> keys = trackSearchService.search(artist, title, page, size);
+
+        logger.info("Found keys: " + keys + " in " + (System.currentTimeMillis()- now) + " ms");
 
         List<TrackEntity> entities = repository.search(keys);
 
+        logger.info("Search by Search API overall took " + (System.currentTimeMillis()- now) + " ms");
         return trackConverter.convertToTracks(entities);
     }
 
 
-
+    public void deleteAll() {
+        repository.deleteAll();
+        trackSearchService.deleteAll();
+    }
 }

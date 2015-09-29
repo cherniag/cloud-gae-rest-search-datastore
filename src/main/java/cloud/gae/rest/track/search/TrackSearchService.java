@@ -11,6 +11,8 @@ import java.util.logging.Logger;
 import cloud.gae.rest.track.service.Track;
 import com.google.appengine.api.search.Document;
 import com.google.appengine.api.search.Field;
+import com.google.appengine.api.search.GetRequest;
+import com.google.appengine.api.search.GetResponse;
 import com.google.appengine.api.search.Index;
 import com.google.appengine.api.search.IndexSpec;
 import com.google.appengine.api.search.PutException;
@@ -44,15 +46,15 @@ public class TrackSearchService {
         }
     }
 
-    public List<String> search(String artist, String title) {
+    public List<String> search(String artist, String title, Integer page, Integer size) {
+        long now = System.currentTimeMillis();
         String queryString = createQuery(artist, title);
-
-        QueryOptions queryOptions = QueryOptions.newBuilder().setReturningIdsOnly(true).build();
+        QueryOptions queryOptions = QueryOptions.newBuilder().setReturningIdsOnly(true).setOffset(page * size).setLimit(size).build();
         Query query = Query.newBuilder().setOptions(queryOptions).build(queryString);
-        logger.info("QueryString [" + queryString + "], query: " + query);
+        logger.info("QueryString [" + queryString);
 
         Results<ScoredDocument> documents = index().search(query);
-        logger.info("Search operational result: " + documents.getOperationResult());
+        logger.info("Search operational result, elapsed " + (System.currentTimeMillis() - now) + " ms");
 
         List<String> keys = new ArrayList<>();
         for (ScoredDocument scoredDocument : documents) {
@@ -68,7 +70,7 @@ public class TrackSearchService {
         }
         if (title != null && !title.isEmpty()) {
             if (queryString.length() != 0) {
-                queryString.append(" OR ");
+                queryString.append(" AND ");
             }
             queryString.append("title=\"").append(title).append("\"");
         }
@@ -94,13 +96,16 @@ public class TrackSearchService {
     }
 
     private String tokenize(String value) {
-        logger.log(Level.FINE, "tokenize " + value);
+        String normalized = value.toLowerCase();
+        if (normalized.length() < 3) {
+            return normalized;
+        }
         StringBuilder result = new StringBuilder();
         Set<String> strings = new HashSet<>();
 
-        for (int start = 0; start < value.length(); start++) {
-            for (int end = start + 1; end < value.length() + 1; end++) {
-                String token = value.substring(start, end).trim();
+        for (int start = 0; start < normalized.length(); start++) {
+            for (int end = start + 3; end < normalized.length() + 1; end++) {
+                String token = normalized.substring(start, end).trim();
                 if (token.isEmpty()) {
                     continue;
                 }
@@ -113,8 +118,28 @@ public class TrackSearchService {
             }
         }
 
-        logger.log(Level.FINE, "result: " + result);
+        logger.log(Level.INFO, "Tokenize [" + value + "], initial length " + value.length() + ", result length " + result.length());
         return result.toString();
     }
 
+    public void deleteAll() {
+        try {
+            // looping because getRange by default returns up to 100 documents at a time
+            while (true) {
+                List<String> docIds = new ArrayList<>();
+                // Return a set of doc_ids.
+                GetRequest request = GetRequest.newBuilder().setReturningIdsOnly(true).build();
+                GetResponse<Document> response = index().getRange(request);
+                if (response.getResults().isEmpty()) {
+                    break;
+                }
+                for (Document doc : response) {
+                    docIds.add(doc.getId());
+                }
+                index().delete(docIds);
+            }
+        } catch (RuntimeException e) {
+            logger.log(Level.SEVERE, "Failed to delete documents", e);
+        }
+    }
 }
